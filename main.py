@@ -11,10 +11,11 @@ import numpy as np
 import cv2 as cv
 import matplotlib as mlt
 from LinearNeuron import *
+from softmaxNeuron import *
 
 num = 200
 dim = 1
-split_num = 2
+split_num = 5
 
 # 正则化项
 λ = 1
@@ -158,6 +159,7 @@ def question2():
     func2 = np.poly1d(w_model)
     x = np.linspace(0, 100, 100)
     y = func(x)
+    print(w)
     x2 = np.linspace(0, 100, 100)
     y2 = func2(x2)
     plt.plot(x, y, color="blue")
@@ -189,39 +191,18 @@ def question3():
     list_train_error = []
     list_test_error = []
     for train, test in splits.split(x):
-        neuron = LinearNeuron(dim + 3, λ)
+        neuron = SoftMaxNeuron(x[train].shape[1], 10)
         list_neuron.append(neuron)
         neuron.fit(x[train], data.train_set_y[train])
         error = neuron.evaluate(x[test], data.train_set_y[test])
         list_train_error.append(error)
         xlike = np.ones(shape=(x[train].shape[0], 1))
-        list_w.append(
-            (neuron.W.T @ np.c_[x[train], xlike].T @ (np.linalg.pinv(np.c_[data.train_set_x[train], xlike].T))).T)
+        # list_w.append(
+        #     (neuron.W.T @ np.c_[x[train], xlike].T @ (np.linalg.pinv(np.c_[data.train_set_x[train], xlike].T))).T)
     for neuron in list_neuron:
         list_test_error.append(neuron.evaluate(x_test, data.test_set_y))
     print(list_test_error)
     index = getmin_index(list_test_error)
-    model = Model()
-    # model.lsm(data.x, data.y)
-    # point1 = [0, 100]
-    # point2 = [model.w.T.dot(np.array([0, 1]).reshape(2, 1))[0][0],
-    #           model.w.T.dot(np.array([100, 1]).reshape(2, 1))[0][0]]
-    fig, ax = plt.subplots()
-    # ax.plot(point1, point2, color="blue")
-
-    ax.scatter(data.x1, data.y)
-    # point1 = [0, 100]
-    # point2 = [list_w[index].T.dot(np.array([0, 1]).reshape(2, 1))[0][0],
-    #           list_w[index].T.dot(np.array([100, 1]).reshape(2, 1))[0][0]]
-    # ax.plot(point1, point2, color="red")
-    func = np.poly1d(list_w[index].squeeze()[::-1])
-    x = np.linspace(0, 100, 100)
-    y = func(x)
-    plt.plot(x, y)
-    plt.xlabel('x')
-    plt.ylabel('y')
-    print(list_w[index])
-    plt.show()
 
 
 class Data:
@@ -246,7 +227,7 @@ class Data:
         x8 = np.power(self.x1, 8)
         x9 = np.power(self.x1, 9)
         x10 = np.power(self.x1, 10)
-        self.x = np.stack((self.x1, x2, x3, x4,x5,x6,x7,x8,x9,x10), axis=-1).squeeze()
+        self.x = np.stack((self.x1, x2, x3, x4, x5, x6, x7, x8, x9, x10), axis=-1).squeeze()
         self.y = self.x1 ** 4 + 2 * self.x1 ** 2 + self.x1 - 1 + np.random.normal(0, 0.5, (num, dim))
         pass
 
@@ -254,8 +235,8 @@ class Data:
         df = pd.read_csv('data/MNIST/mnist_test.csv')
         data = np.vstack((df.columns.to_numpy(), df.to_numpy())).astype(np.float32)
         self.y, self.x = data[:, 0], data[:, 1:]
-        print(x.shape)
-        print(y.shape)
+        print(self.x.shape)
+        print(self.y.shape)
 
         pass
 
@@ -311,3 +292,4 @@ if __name__ == '__main__':
     # print_hi('PyCharm')
     # test1()
     question2()
+    # question3()
