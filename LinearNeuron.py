@@ -6,7 +6,7 @@ from sklearn.model_selection import KFold
 
 class LinearNeuron:
     def __init__(self, in_features, λ):
-        self.N_SPLITS = 20
+        self.N_SPLITS = 2
         self.in_features = in_features
         self.λ = λ
         self.W = np.zeros((self.in_features + 1, 1))
@@ -18,7 +18,7 @@ class LinearNeuron:
         z = (self.W.T @ X.T).T
         return z
 
-    def fit(self, X, Y, lr=0.02):
+    def fit(self, X, Y, lr=0.2):
         n = X.shape[0]  # sample counts
         d = X.shape[1]  # dim of features
         if d != self.in_features:
@@ -32,7 +32,7 @@ class LinearNeuron:
         self.W = np.zeros((self.in_features + 1, 1))
 
         loss0 = np.Inf
-        epsilon = 1e-3
+        epsilon = 1e-20
         iter = 0
         while (True):
             # predict
@@ -40,8 +40,9 @@ class LinearNeuron:
 
             # loss
             loss = (rho - Y).T @ (rho - Y) / X.shape[0]
-
-            # print('iter = %03d, loss = %.6f' % (iter, loss))
+            if loss > loss0:
+                lr /= 1.1
+            print('iter = %03d, loss = %.6f' % (iter, loss))
             iter = iter + 1
 
             if np.abs(loss - loss0) < epsilon:

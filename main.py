@@ -12,9 +12,9 @@ import cv2 as cv
 import matplotlib as mlt
 from LinearNeuron import *
 
-num = 100
+num = 2000
 dim = 1
-split_num = 5
+split_num = 2
 
 # 正则化项
 λ = 0.1
@@ -120,37 +120,45 @@ def question2():
     splits = data.divide_data(split_num)
     scaler = preprocessing.StandardScaler().fit(data.train_set_x)
     x = scaler.transform(data.train_set_x)
+    x_test = scaler.transform(data.test_set_x)
     list_neuron = []
     list_w = []
     list_train_error = []
     list_test_error = []
     for train, test in splits.split(x):
-        neuron = LinearNeuron(dim + 9, λ)
+        neuron = LinearNeuron(dim + 2, λ)
         list_neuron.append(neuron)
         neuron.fit(x[train], data.train_set_y[train])
         error = neuron.evaluate(x[test], data.train_set_y[test])
         list_train_error.append(error)
-        list_w.append(neuron.W)
+        xlike = np.ones(shape=(x[train].shape[0], 1))
+        list_w.append(
+            (neuron.W.T @ np.c_[x[train], xlike].T @ (np.linalg.pinv(np.c_[data.train_set_x[train], xlike].T))).T)
     for neuron in list_neuron:
-        list_test_error.append(neuron.evaluate(data.test_set_x, data.test_set_y))
+        list_test_error.append(neuron.evaluate(x_test, data.test_set_y))
+    print(list_test_error)
     index = getmin_index(list_test_error)
     model = Model()
-    model.lsm(data.x, data.y)
-    point1 = [0, 100]
-    point2 = [model.w.T.dot(np.array([0, 1]).reshape(2, 1))[0][0],
-              model.w.T.dot(np.array([100, 1]).reshape(2, 1))[0][0]]
+    # model.lsm(data.x, data.y)
+    # point1 = [0, 100]
+    # point2 = [model.w.T.dot(np.array([0, 1]).reshape(2, 1))[0][0],
+    #           model.w.T.dot(np.array([100, 1]).reshape(2, 1))[0][0]]
     fig, ax = plt.subplots()
-    ax.plot(point1, point2, color="blue")
+    # ax.plot(point1, point2, color="blue")
 
-    # model.GD(data.x, data.y)
-    # print(data.x.shape)
-    ax.scatter(data.x, data.y)
-    point1 = [0, 100]
-    point2 = [list_w[index].T.dot(np.array([0, 1]).reshape(2, 1))[0][0],
-              list_w[index].T.dot(np.array([100, 1]).reshape(2, 1))[0][0]]
-    ax.plot(point1, point2, color="red")
+    ax.scatter(data.x1, data.y)
+    # point1 = [0, 100]
+    # point2 = [list_w[index].T.dot(np.array([0, 1]).reshape(2, 1))[0][0],
+    #           list_w[index].T.dot(np.array([100, 1]).reshape(2, 1))[0][0]]
+    # ax.plot(point1, point2, color="red")
+    func = np.poly1d(list_w[index].squeeze())
+    x = np.linspace(-5, 5, 100)
+    y = func(x)
+    plt.plot(x, y)
+    plt.xlabel('x')
+    plt.ylabel('y')
+    print(list_w[index])
     plt.show()
-    model = Model()
 
 
 class Data:
@@ -165,18 +173,18 @@ class Data:
         return splits
 
     def create_data2(self):
-        x1 = np.random.uniform(10, 100, (num, dim))
-        x2 = np.power(x1, 2)
-        x3 = np.power(x1, 3)
-        x4 = np.power(x1, 4)
-        x5 = np.power(x1, 5)
-        x6 = np.power(x1, 6)
-        x7 = np.power(x1, 7)
-        x8 = np.power(x1, 8)
-        x9 = np.power(x1, 9)
-        x10 = np.power(x1, 10)
-        self.x = np.stack((x1, x2, x3, x4, x5, x6, x7, x8, x9, x10), axis=-1).squeeze()
-        self.y = x1 ** 3 + 2 * x1 ** 2 + x1 - 1 + np.random.normal(0, 20, (num, dim))
+        self.x1 = np.random.uniform(-5, 5, (num, dim))
+        x2 = np.power(self.x1, 2)
+        x3 = np.power(self.x1, 3)
+        x4 = np.power(self.x1, 4)
+        x5 = np.power(self.x1, 5)
+        x6 = np.power(self.x1, 6)
+        x7 = np.power(self.x1, 7)
+        x8 = np.power(self.x1, 8)
+        x9 = np.power(self.x1, 9)
+        x10 = np.power(self.x1, 10)
+        self.x = np.stack((self.x1, x2, x3), axis=-1).squeeze()
+        self.y = self.x1 ** 3 + 2 * self.x1 ** 2 + self.x1 - 1 + np.random.normal(0, 0.5, (num, dim))
         pass
 
 
@@ -229,5 +237,5 @@ class Model:
 if __name__ == '__main__':
     np.seterr(invalid='ignore')
     # print_hi('PyCharm')
-    test1()
-    # question2()
+    # test1()
+    question2()
