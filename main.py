@@ -9,6 +9,7 @@ from sklearn.model_selection import KFold, train_test_split
 import numpy as np
 import cv2 as cv
 import matplotlib as mlt
+from LinearNeuron import *
 
 num = 100
 dim = 1
@@ -31,7 +32,6 @@ def getmin_index(list_error):
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
     print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-    np.seterr(invalid='ignore')
     data = Data()
     data.create_data()
     splits = data.divide_data(split_num)
@@ -70,6 +70,14 @@ def print_hi(name):
     plt.show()
 
 
+def question2():
+    data = Data()
+    data.create_data2()
+    splits = data.divide_data(split_num)
+    model = Model()
+
+
+
 class Data:
     def create_data(self):
         self.x = np.random.uniform(10, 100, (num, dim))
@@ -80,6 +88,11 @@ class Data:
                                                                                                 test_size=0.2)
         splits = KFold(n_splits=s, shuffle=True)
         return splits
+
+    def create_data2(self):
+        self.x = np.random.uniform(10, 100, (num, dim))
+        self.y = self.x ** 3 + 2 * self.x ** 2 + self.x - 1 + np.random.normal(0, 20, (num, dim))
+        pass
 
 
 class Model:
@@ -129,4 +142,5 @@ class Model:
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+    np.seterr(invalid='ignore')
     print_hi('PyCharm')
