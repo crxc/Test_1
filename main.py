@@ -29,6 +29,42 @@ def getmin_index(list_error):
     pass
 
 
+def test1():
+    data = Data()
+    data.create_data()
+    splits = data.divide_data(split_num)
+    list_neuron = []
+    list_w = []
+    list_train_error = []
+    list_test_error = []
+    for train, test in splits.split(data.train_set_x):
+        neuron = LinearNeuron(dim, λ)
+        list_neuron.append(neuron)
+        neuron.fit(data.train_set_x[train], data.train_set_y[train])
+        error = neuron.evaluate(data.train_set_x[test], data.train_set_y[test])
+        list_train_error.append(error)
+        list_w.append(neuron.W)
+    for neuron in list_neuron:
+        list_test_error.append(neuron.evaluate(data.test_set_x, data.test_set_y))
+    index = getmin_index(list_test_error)
+    model = Model()
+    model.lsm(data.x, data.y)
+    point1 = [0, 100]
+    point2 = [model.w.T.dot(np.array([0, 1]).reshape(2, 1))[0][0],
+              model.w.T.dot(np.array([100, 1]).reshape(2, 1))[0][0]]
+    fig, ax = plt.subplots()
+    ax.plot(point1, point2, color="blue")
+
+    # model.GD(data.x, data.y)
+    # print(data.x.shape)
+    ax.scatter(data.x, data.y)
+    point1 = [0, 100]
+    point2 = [list_w[index].T.dot(np.array([0, 1]).reshape(2, 1))[0][0],
+              list_w[index].T.dot(np.array([100, 1]).reshape(2, 1))[0][0]]
+    ax.plot(point1, point2, color="red")
+    plt.show()
+
+
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
     print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
@@ -75,7 +111,6 @@ def question2():
     data.create_data2()
     splits = data.divide_data(split_num)
     model = Model()
-
 
 
 class Data:
@@ -143,4 +178,5 @@ class Model:
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     np.seterr(invalid='ignore')
-    print_hi('PyCharm')
+    # print_hi('PyCharm')
+    test1()

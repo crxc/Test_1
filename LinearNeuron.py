@@ -1,46 +1,62 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from sklearn.model_selection import KFold
 
 
 class LinearNeuron:
     def __init__(self, in_features, λ):
+        self.N_SPLITS = 20
         self.in_features = in_features
-        self.λ = 0.1
+        self.λ = λ
         self.W = np.zeros((self.in_features + 1, 1))
 
-    def sigmoid(z):
-        return 1 / (1 + np.exp(-z))
-
-    def predict(self, x):
-        xlike = np.ones_like(x)
-        x = np.stack((x, xlike), axis=-1).squeeze()
-        z = self.W.T @ x
+    def predict(self, X):
+        xlike = np.ones_like(X)
+        X = np.stack((X, xlike), axis=-1).squeeze()
+        z = (self.W.T @ X.T).T
         return z
 
-    def fit(self, X, Y, lr=0.1):
+    def fit(self, X, Y, lr=0.000001):
+        # global x, y
+        # xlike = np.ones_like(X)
+        # X = np.stack((X, xlike), axis=-1).squeeze()
+        # k = 0
+        # while (True):
+        #     w_old = self.w.copy()
+        #     splits = KFold(n_splits=self.N_SPLITS, shuffle=True)
+        #     for train_index, test_index in splits.split(X):
+        #         x, y = X[test_index], Y[test_index]
+        #         break
+        #     self.w -= (self.α * 2 * (x.T.dot(x).dot(self.w) - x.T.dot(y) - λ * self.w)) / (num / self.N_SPLITS)
+        #     k += 1
+        #     distance = self.distance(w_old, self.w)
+        #     if distance < self.ε:
+        #         print("距离" + str(distance))
+        #         break
+        # print("循环了" + str(k) + "次")
+        # print(self.w)
         n = X.shape[0]  # sample counts
         d = X.shape[1]  # dim of features
         if d != self.in_features:
             raise ValueError('X.shape[0] must be self.in_features (%d)' % (self.in_features))
 
-        Y = Y.reshape((1, -1))
-        if Y.shape[1] != n:
+        Y = Y.reshape((-1, 1))
+        if Y.shape[0] != n:
             raise ValueError('Y.shape[1] must be sample counts (%d)' % (n))
 
         # initialize params
         self.W = np.zeros((self.in_features + 1, 1))
 
         loss0 = np.Inf
-        epsilon = 1e-6
+        epsilon = 1e-5
         iter = 0
         while (True):
             # predict
             rho = self.predict(X)  # 1 x n
 
             # loss
-            loss = (self.W.T.dot(X.T).dot(X).dot(self.W) - 2 * self.W.T.dot(X.T).dot(Y) + self.λ * self.W.T.dot(
-                self.W) + Y.T.dot(Y)) / X.shape[0]
+            loss = (rho - Y).T @ (rho - Y) / X.shape[0]
 
             print('iter = %03d, loss = %.6f' % (iter, loss))
             iter = iter + 1
@@ -54,8 +70,14 @@ class LinearNeuron:
             # e = rho - Y  # 1 x n
 
             # dw,db:
-            dw = 2 * (X.T.dot(X).dot(self.W) - X.T.dot(Y) - self.λ * self.W) / X.shape[0]
-
+            xlike = np.ones_like(X)
+            x = np.stack((X, xlike), axis=-1).squeeze()
+            splits = KFold(n_splits=self.N_SPLITS, shuffle=True)
+            global x_s, y_s
+            for train_index, test_index in splits.split(X):
+                x_s, y_s = x[test_index], Y[test_index]
+                break
+            dw = 2 * (x_s.T.dot(x_s).dot(self.W) - x_s.T.dot(y_s) - self.λ * self.W) / x_s.shape[0]
             self.W = self.W - lr * dw
 
     def evaluate(self, x, y):
