@@ -12,12 +12,12 @@ import cv2 as cv
 import matplotlib as mlt
 from LinearNeuron import *
 
-num = 2000
+num = 200
 dim = 1
 split_num = 2
 
 # 正则化项
-λ = 0.1
+λ = 1
 
 
 def getmin_index(list_error):
@@ -126,7 +126,70 @@ def question2():
     list_train_error = []
     list_test_error = []
     for train, test in splits.split(x):
-        neuron = LinearNeuron(dim + 2, λ)
+        neuron = LinearNeuron(dim + 9, λ)
+        list_neuron.append(neuron)
+        neuron.fit(x[train], data.train_set_y[train])
+        error = neuron.evaluate(x[test], data.train_set_y[test])
+        list_train_error.append(error)
+        xlike = np.ones(shape=(x[train].shape[0], 1))
+        list_w.append(
+            (neuron.W.T @ np.c_[x[train], xlike].T @ (np.linalg.pinv(np.c_[data.train_set_x[train], xlike].T))).T)
+    for neuron in list_neuron:
+        list_test_error.append(neuron.evaluate(x_test, data.test_set_y))
+    print(list_test_error)
+    index = getmin_index(list_test_error)
+    model = Model()
+    model.lsm(data.x, data.y)
+    # point1 = [0, 100]
+    # point2 = [model.w.T.dot(np.array([0, 1]).reshape(2, 1))[0][0],
+    #           model.w.T.dot(np.array([100, 1]).reshape(2, 1))[0][0]]
+    fig, ax = plt.subplots()
+    # ax.plot(point1, point2, color="blue")
+
+    ax.scatter(data.x1, data.y)
+    # point1 = [0, 100]
+    # point2 = [list_w[index].T.dot(np.array([0, 1]).reshape(2, 1))[0][0],
+    #           list_w[index].T.dot(np.array([100, 1]).reshape(2, 1))[0][0]]
+    # ax.plot(point1, point2, color="red")
+    w = list_w[index].squeeze()
+    w = change(w)
+    func = np.poly1d(w)
+    w_model = change(model.w.squeeze())
+    func2 = np.poly1d(w_model)
+    x = np.linspace(0, 100, 100)
+    y = func(x)
+    x2 = np.linspace(0, 100, 100)
+    y2 = func2(x2)
+    plt.plot(x, y, color="blue")
+    plt.plot(x2, y2, color="red")
+    plt.xlabel('x')
+    plt.ylabel('y')
+    print("最小二乘")
+    print(w_model)
+    plt.show()
+
+
+def change(w):
+    b = w[w.shape[0] - 1]
+    w = np.delete(w, w.shape[0] - 1)
+    w = np.r_[np.array([b]), w]
+    w = w[::-1]
+    return w
+
+
+def question3():
+    data = Data()
+    data.create_data3()
+    splits = data.divide_data(split_num)
+    scaler = preprocessing.StandardScaler().fit(data.train_set_x)
+    x = scaler.transform(data.train_set_x)
+    x_test = scaler.transform(data.test_set_x)
+    list_neuron = []
+    list_w = []
+    list_train_error = []
+    list_test_error = []
+    for train, test in splits.split(x):
+        neuron = LinearNeuron(dim + 3, λ)
         list_neuron.append(neuron)
         neuron.fit(x[train], data.train_set_y[train])
         error = neuron.evaluate(x[test], data.train_set_y[test])
@@ -151,8 +214,8 @@ def question2():
     # point2 = [list_w[index].T.dot(np.array([0, 1]).reshape(2, 1))[0][0],
     #           list_w[index].T.dot(np.array([100, 1]).reshape(2, 1))[0][0]]
     # ax.plot(point1, point2, color="red")
-    func = np.poly1d(list_w[index].squeeze())
-    x = np.linspace(-5, 5, 100)
+    func = np.poly1d(list_w[index].squeeze()[::-1])
+    x = np.linspace(0, 100, 100)
     y = func(x)
     plt.plot(x, y)
     plt.xlabel('x')
@@ -173,7 +236,7 @@ class Data:
         return splits
 
     def create_data2(self):
-        self.x1 = np.random.uniform(-5, 5, (num, dim))
+        self.x1 = np.random.uniform(0, 100, (num, dim))
         x2 = np.power(self.x1, 2)
         x3 = np.power(self.x1, 3)
         x4 = np.power(self.x1, 4)
@@ -183,8 +246,17 @@ class Data:
         x8 = np.power(self.x1, 8)
         x9 = np.power(self.x1, 9)
         x10 = np.power(self.x1, 10)
-        self.x = np.stack((self.x1, x2, x3), axis=-1).squeeze()
-        self.y = self.x1 ** 3 + 2 * self.x1 ** 2 + self.x1 - 1 + np.random.normal(0, 0.5, (num, dim))
+        self.x = np.stack((self.x1, x2, x3, x4,x5,x6,x7,x8,x9,x10), axis=-1).squeeze()
+        self.y = self.x1 ** 4 + 2 * self.x1 ** 2 + self.x1 - 1 + np.random.normal(0, 0.5, (num, dim))
+        pass
+
+    def create_data3(self):
+        df = pd.read_csv('data/MNIST/mnist_test.csv')
+        data = np.vstack((df.columns.to_numpy(), df.to_numpy())).astype(np.float32)
+        self.y, self.x = data[:, 0], data[:, 1:]
+        print(x.shape)
+        print(y.shape)
+
         pass
 
 
@@ -195,10 +267,10 @@ class Model:
     N_SPLITS = 50
 
     def lsm(self, X, Y):
-        xlike = np.ones_like(X)
-        X = np.stack((X, xlike), axis=-1).squeeze()
-        self.w = np.linalg.inv(X.T.dot(X) - λ * np.identity(dim + 1)).dot(X.T).dot(Y)
-        print(X.shape)
+        xlike = np.ones(shape=(X.shape[0], 1))
+        x = np.c_[X, xlike]
+        self.w = np.linalg.inv(x.T.dot(x) - λ * np.identity(dim + 10)).dot(x.T).dot(Y)
+        print(x.shape)
         print(self.w)
 
     def distance(self, w1, w2):

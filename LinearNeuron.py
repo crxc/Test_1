@@ -32,7 +32,7 @@ class LinearNeuron:
         self.W = np.zeros((self.in_features + 1, 1))
 
         loss0 = np.Inf
-        epsilon = 1e-20
+        epsilon = 1e+5
         iter = 0
         while (True):
             # predict
