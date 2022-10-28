@@ -12,30 +12,13 @@ class LinearNeuron:
         self.W = np.zeros((self.in_features + 1, 1))
 
     def predict(self, X):
-        xlike = np.ones_like(X)
-        X = np.stack((X, xlike), axis=-1).squeeze()
+        xlike = np.ones(shape=(X.shape[0], 1))
+        X = np.c_[X, xlike]
+        # X = np.stack((X, xlike), axis=1).squeeze()
         z = (self.W.T @ X.T).T
         return z
 
-    def fit(self, X, Y, lr=0.000001):
-        # global x, y
-        # xlike = np.ones_like(X)
-        # X = np.stack((X, xlike), axis=-1).squeeze()
-        # k = 0
-        # while (True):
-        #     w_old = self.w.copy()
-        #     splits = KFold(n_splits=self.N_SPLITS, shuffle=True)
-        #     for train_index, test_index in splits.split(X):
-        #         x, y = X[test_index], Y[test_index]
-        #         break
-        #     self.w -= (self.α * 2 * (x.T.dot(x).dot(self.w) - x.T.dot(y) - λ * self.w)) / (num / self.N_SPLITS)
-        #     k += 1
-        #     distance = self.distance(w_old, self.w)
-        #     if distance < self.ε:
-        #         print("距离" + str(distance))
-        #         break
-        # print("循环了" + str(k) + "次")
-        # print(self.w)
+    def fit(self, X, Y, lr=0.02):
         n = X.shape[0]  # sample counts
         d = X.shape[1]  # dim of features
         if d != self.in_features:
@@ -49,7 +32,7 @@ class LinearNeuron:
         self.W = np.zeros((self.in_features + 1, 1))
 
         loss0 = np.Inf
-        epsilon = 1e-5
+        epsilon = 1e-3
         iter = 0
         while (True):
             # predict
@@ -58,7 +41,7 @@ class LinearNeuron:
             # loss
             loss = (rho - Y).T @ (rho - Y) / X.shape[0]
 
-            print('iter = %03d, loss = %.6f' % (iter, loss))
+            # print('iter = %03d, loss = %.6f' % (iter, loss))
             iter = iter + 1
 
             if np.abs(loss - loss0) < epsilon:
@@ -70,8 +53,8 @@ class LinearNeuron:
             # e = rho - Y  # 1 x n
 
             # dw,db:
-            xlike = np.ones_like(X)
-            x = np.stack((X, xlike), axis=-1).squeeze()
+            xlike = np.ones(shape=(X.shape[0], 1))
+            x = np.c_[X, xlike]
             splits = KFold(n_splits=self.N_SPLITS, shuffle=True)
             global x_s, y_s
             for train_index, test_index in splits.split(X):
@@ -82,9 +65,8 @@ class LinearNeuron:
 
     def evaluate(self, x, y):
         rho = self.predict(x)
-        yhat = np.where(rho >= 0.5, 1, 0)
-        err = (yhat != y).astype('float').mean()
-        return err
+        loss = (rho - y).T @ (rho - y) / x.shape[0]
+        return loss
 
 
 def splitData(x, y, train_size=0.7):

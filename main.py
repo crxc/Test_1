@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 from sklearn.model_selection import KFold, train_test_split
+from sklearn import preprocessing
 # import pandas as pd
 import numpy as np
 import cv2 as cv
@@ -14,6 +15,7 @@ from LinearNeuron import *
 num = 100
 dim = 1
 split_num = 5
+
 # 正则化项
 λ = 0.1
 
@@ -33,19 +35,25 @@ def test1():
     data = Data()
     data.create_data()
     splits = data.divide_data(split_num)
+    scaler = preprocessing.StandardScaler().fit(data.train_set_x)
+    x = scaler.transform(data.train_set_x)
+    x_test = scaler.transform(data.test_set_x)
     list_neuron = []
     list_w = []
     list_train_error = []
     list_test_error = []
-    for train, test in splits.split(data.train_set_x):
+    for train, test in splits.split(x):
         neuron = LinearNeuron(dim, λ)
         list_neuron.append(neuron)
-        neuron.fit(data.train_set_x[train], data.train_set_y[train])
-        error = neuron.evaluate(data.train_set_x[test], data.train_set_y[test])
+        neuron.fit(x[train], data.train_set_y[train])
+        error = neuron.evaluate(x[test], data.train_set_y[test])
         list_train_error.append(error)
-        list_w.append(neuron.W)
+        xlike = np.ones(shape=(x[train].shape[0], 1))
+        list_w.append(
+            (neuron.W.T @ np.c_[x[train], xlike].T @ (np.linalg.pinv(np.c_[data.train_set_x[train], xlike].T))).T)
     for neuron in list_neuron:
-        list_test_error.append(neuron.evaluate(data.test_set_x, data.test_set_y))
+        list_test_error.append(neuron.evaluate(x_test, data.test_set_y))
+    print(list_test_error)
     index = getmin_index(list_test_error)
     model = Model()
     model.lsm(data.x, data.y)
@@ -110,6 +118,38 @@ def question2():
     data = Data()
     data.create_data2()
     splits = data.divide_data(split_num)
+    scaler = preprocessing.StandardScaler().fit(data.train_set_x)
+    x = scaler.transform(data.train_set_x)
+    list_neuron = []
+    list_w = []
+    list_train_error = []
+    list_test_error = []
+    for train, test in splits.split(x):
+        neuron = LinearNeuron(dim + 9, λ)
+        list_neuron.append(neuron)
+        neuron.fit(x[train], data.train_set_y[train])
+        error = neuron.evaluate(x[test], data.train_set_y[test])
+        list_train_error.append(error)
+        list_w.append(neuron.W)
+    for neuron in list_neuron:
+        list_test_error.append(neuron.evaluate(data.test_set_x, data.test_set_y))
+    index = getmin_index(list_test_error)
+    model = Model()
+    model.lsm(data.x, data.y)
+    point1 = [0, 100]
+    point2 = [model.w.T.dot(np.array([0, 1]).reshape(2, 1))[0][0],
+              model.w.T.dot(np.array([100, 1]).reshape(2, 1))[0][0]]
+    fig, ax = plt.subplots()
+    ax.plot(point1, point2, color="blue")
+
+    # model.GD(data.x, data.y)
+    # print(data.x.shape)
+    ax.scatter(data.x, data.y)
+    point1 = [0, 100]
+    point2 = [list_w[index].T.dot(np.array([0, 1]).reshape(2, 1))[0][0],
+              list_w[index].T.dot(np.array([100, 1]).reshape(2, 1))[0][0]]
+    ax.plot(point1, point2, color="red")
+    plt.show()
     model = Model()
 
 
@@ -125,8 +165,18 @@ class Data:
         return splits
 
     def create_data2(self):
-        self.x = np.random.uniform(10, 100, (num, dim))
-        self.y = self.x ** 3 + 2 * self.x ** 2 + self.x - 1 + np.random.normal(0, 20, (num, dim))
+        x1 = np.random.uniform(10, 100, (num, dim))
+        x2 = np.power(x1, 2)
+        x3 = np.power(x1, 3)
+        x4 = np.power(x1, 4)
+        x5 = np.power(x1, 5)
+        x6 = np.power(x1, 6)
+        x7 = np.power(x1, 7)
+        x8 = np.power(x1, 8)
+        x9 = np.power(x1, 9)
+        x10 = np.power(x1, 10)
+        self.x = np.stack((x1, x2, x3, x4, x5, x6, x7, x8, x9, x10), axis=-1).squeeze()
+        self.y = x1 ** 3 + 2 * x1 ** 2 + x1 - 1 + np.random.normal(0, 20, (num, dim))
         pass
 
 
@@ -180,3 +230,4 @@ if __name__ == '__main__':
     np.seterr(invalid='ignore')
     # print_hi('PyCharm')
     test1()
+    # question2()
